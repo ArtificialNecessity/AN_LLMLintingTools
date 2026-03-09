@@ -19,96 +19,44 @@ This repository contains tools that help optimize codebases for LLM (Large Langu
 
 ### 1. Code Duplication Checker (C#)
 
-**Location:** [`CodeDuplicationChecker/CheckCodeDuplication.cs`](CodeDuplicationChecker/CheckCodeDuplication.cs)
+**The #1 Problem:** LLMs naturally copy-paste and rewrite similar code segments because they have no inherent "cost" to duplicating code. This breaks the Single Responsibility Principle and creates maintenance nightmares.
 
-A sophisticated code duplication detector that uses phrase-based hashing to find duplicate code blocks across multiple files.
+A sophisticated code duplication detector that uses phrase-based hashing to find duplicate code blocks across multiple files, acting as a **cognitive guardrail** that makes duplication visible immediately.
 
-#### Why This Matters for LLM Development
-
-1. **Token Efficiency** - Duplicated code wastes LLM context window space
-2. **Context Window Optimization** - Increases codebase "information density" 
-3. **Consistent Edits** - Identifies all locations that need updating when using `apply_diff`
-4. **Faster Semantic Search** - Less redundancy means better search results
-5. **Architecture Signals** - Large duplicate blocks suggest refactoring opportunities
-6. **LLM Vulnerability Defense** - Acts as an "injected linter" to catch accidental duplication
-
-#### Supported Languages
-
-- **C-family:** C (`.c`, `.h`), C++ (`.cpp`, `.hpp`), C# (`.cs`), Java (`.java`), Go (`.go`), Rust (`.rs`)
-- **Web/JS:** TypeScript (`.ts`, `.tsx`), JavaScript (`.js`, `.jsx`)
-- **Markup:** HTML (`.html`, `.htm`), CSS (`.css`, `.scss`, `.less`)
-- **Scripting:** Python (`.py`), Ruby (`.rb`)
-
-#### Usage
-
+**Quick Start:**
 ```bash
-# Scan a directory
 dotnet run --file CodeDuplicationChecker/CheckCodeDuplication.cs <path>
-
-# JSON output for programmatic consumption
-dotnet run --file CodeDuplicationChecker/CheckCodeDuplication.cs --json <path>
-
-# SARIF output for VSCode integration
-dotnet run --file CodeDuplicationChecker/CheckCodeDuplication.cs --sarif duplication.sarif <path>
-
-# Single file self-deduplication
-dotnet run --file CodeDuplicationChecker/CheckCodeDuplication.cs myfile.ts
 ```
 
-#### Algorithm
+**📖 [Full Documentation](PROMPTS/CodeDuplication.md)** - Algorithm details, supported languages, output formats, CI/CD integration
 
-Uses a **one-pass phrase hashing algorithm** with:
-- 10-token phrase windows
-- Minimum 200 tokens for fragment detection
-- 60% minimum hit ratio threshold
-- Contiguous hit/miss tracking
-- Smart filtering of boilerplate (comments, imports, method signatures)
-
-#### Output Formats
-
-- **Human-readable:** Percentage match, token count, file locations
-- **JSON:** Structured data for LLM/programmatic consumption
-- **SARIF v2.1.0:** VSCode Problems pane integration with bidirectional warnings
-
-#### Exit Codes
-
-- `0` - No duplicates found (clean)
-- `1` - Duplicates found above threshold (for CI/CD integration)
+---
 
 ### 2. TypeScript ESLint Rules
 
-**Location:** [`TypeScript_TSPatch/`](TypeScript_TSPatch/)
+Custom ESLint rules that enforce **linguistic keying** - creating unambiguous cognitive pathways for LLMs through fully-qualified, semantically-explicit type names.
 
-Custom ESLint rules for TypeScript that enforce best practices for type safety and code organization.
+#### `enforce-namespaced-brands`
 
-#### Rules
-
-##### `enforce-namespaced-brands.js`
-
-Enforces that branded types are defined within namespaces to prevent top-level pollution.
+Enforces that branded types are defined within namespaces to enable deterministic LLM cognitive processing.
 
 ```typescript
-// ❌ Bad - top-level brand
-export type UserId = Brand<string, "UserId">;
+// ❌ Bad - ambiguous, high-entropy
+type UserId = string;
 
-// ✅ Good - namespaced brand
-export namespace User {
-  export type Id = Brand<string, "UserId">;
+// ✅ Good - linguistically keyed
+export namespace Brands {
+  export type User_SessionID = Brand<string, 'User_SessionID'>;
 }
 ```
 
-**Configuration:**
-```json
-{
-  "rules": {
-    "enforce-namespaced-brands": "warn"
-  }
-}
-```
+**📖 [Full Documentation](PROMPTS/BrandedTypes.md)** - Linguistic keying philosophy, cognitive architecture, examples
 
-##### `match-namespace-import-to-filename.js`
+---
 
-Ensures namespace imports match the filename or directory being imported from.
+#### `match-namespace-import-to-filename`
+
+Ensures namespace imports match the filename being imported from.
 
 ```typescript
 // ❌ Bad
@@ -116,47 +64,25 @@ import * as foo from './utils/helpers';
 
 // ✅ Good
 import * as helpers from './utils/helpers';
-
-// ✅ Also good for index files
-import * as utils from './utils/index';
 ```
 
-**Options:**
-- `ignoreCase` (default: `false`) - Case-insensitive matching
-- `allowIndexFiles` (default: `true`) - Use parent directory name for index files
+**📖 [Full Documentation](PROMPTS/TypeScriptRules.md#match-namespace-import-to-filename)** - Configuration options, auto-fix behavior
 
-**Configuration:**
-```json
-{
-  "rules": {
-    "match-namespace-import-to-filename": ["warn", {
-      "ignoreCase": false,
-      "allowIndexFiles": true
-    }]
-  }
-}
-```
+---
 
-##### `no-type-assertion-in-instanceof.js`
+#### `no-type-assertion-in-instanceof`
 
-Disallows type assertions in `instanceof` expressions since they're misleading and don't affect runtime behavior.
+Disallows misleading type assertions in `instanceof` expressions.
 
 ```typescript
-// ❌ Bad - type assertion is misleading
+// ❌ Bad
 if ((obj as MyClass) instanceof MyClass) { }
 
 // ✅ Good
 if (obj instanceof MyClass) { }
 ```
 
-**Configuration:**
-```json
-{
-  "rules": {
-    "no-type-assertion-in-instanceof": "error"
-  }
-}
-```
+**📖 [Full Documentation](PROMPTS/TypeScriptRules.md#no-type-assertion-in-instanceof)** - Why this matters, examples
 
 ## Installation
 
@@ -219,3 +145,18 @@ This project is designed for LLM-assisted development workflows. Contributions t
 - [Refactoring Guru - Duplicate Code](https://refactoring.guru/smells/duplicate-code)
 - [SARIF Specification](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
 - [ESLint Custom Rules](https://eslint.org/docs/latest/extend/custom-rules)
+
+
+## See Also: Reflex Engine - VSCode Extension
+
+**[Install from VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=artificial-necessity.astrodev)**
+
+The Reflex Engine is a VSCode extension that provides an **always-on incremental update on save** version of the Code Duplication Checker, plus a framework for writing other automation scripts. It runs the duplication checker automatically whenever you save a file, providing immediate feedback in the VSCode Problems pane.
+
+**Features:**
+- Automatic code duplication detection on save
+- SARIF integration for VSCode Problems pane
+- Framework for custom automation scripts
+- Designed for LLM-assisted development workflows
+
+---
